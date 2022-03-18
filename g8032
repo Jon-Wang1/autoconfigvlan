@@ -1,0 +1,120 @@
+#!/usr/bin/python3
+# coding=utf-8
+from telnetlib import Telnet
+import multiprocessing
+import time
+import re
+
+
+def show_cmd(ip, cmds1, cmds2, cmds3, ID, Device_type):
+    try:
+        tn = Telnet(ip, 23)
+        time.sleep(1)
+        tn.write(b'root\n')
+        time.sleep(1)
+        tn.write(b'uptime\n')
+        tn.write(b'imish\n')
+        time.sleep(1)
+        tn.write(cmds1.encode())
+        tn.write(b'\n')
+        time.sleep(1)
+        tn.write(cmds2.encode())
+        tn.write(b'\n')
+        time.sleep(1)
+        rackreply = tn.expect([], timeout=1)[2].decode().strip()
+        if re.match('[\S\s]* \d\d:\d\d:\d\d up.*', rackreply):
+            uptime = re.match('[\S\s]* \d\d:\d\d:\d\d up\s+(\d{1,3}.*),  \d users?', rackreply).groups()[0]
+        else:
+            uptime = '未知'
+        if re.match('[\S\s]*G8032_ST_IDLE', rackreply):
+            G8032_ST = 'G8032状态正常'
+        elif re.match('[\S\s]*G8032_ST_PROTECTION', rackreply):
+            G8032_ST = 'G8032状态\033[5;31;40m故障\033[0m'
+        elif re.match('[\S\s]*G8032_ST_PENDING', rackreply):
+            G8032_ST = 'G8032状态\033[5;31;40m过渡\033[0m'
+        else:
+            G8032_ST = 'G8032状态\033[5;31;40m未知\033[0m'
+
+        if re.match('[\S\s]*\s+Yes\s+', rackreply):
+            Link1_ST = '光纤1正常'
+        elif re.match('[\S\s]*\s+No\s+', rackreply):
+            Link1_ST = '光纤1\033[5;31;40m断开\033[0m'
+        else:
+            Link1_ST = '光纤1状态\033[5;31;40m未知\033[0m'
+
+        tn.write(cmds3.encode())
+        tn.write(b'\n')
+        time.sleep(1)
+        rackreply = tn.expect([], timeout=1)[2].decode().strip()
+        if re.match('[\S\s]*\s+Yes\s+', rackreply):
+            Link2_ST = '光纤2正常'
+        elif re.match('[\S\s]*\s+No\s+', rackreply):
+            Link2_ST = '光纤2\033[5;31;40m断开\033[0m'
+        else:
+            Link2_ST = '光纤2状态\033[5;31;40m未知\033[0m'
+
+        tn.write(b'exit\n')
+        tn.close()
+        print(Device_type + str(ID) + '\t' + G8032_ST + '\t' + Link1_ST + '\t' + Link2_ST + '\t' + '运行时间 ' + uptime)
+    except Exception as e:
+        time.sleep(5)
+        print(ID + str(e))
+
+
+HX1_HX2 = 'sho etherne cf mai re do md1 vlan 3812 br 1'
+HX1_HX3 = 'sho etherne cf mai re do md1 vlan 3813 br 1'
+HX1_HX4 = 'sho etherne cf mai re do md1 vlan 3814 br 1'
+HX2_HX4 = 'sho etherne cf mai re do md1 vlan 3824 br 1'
+HX2_HX3 = 'sho etherne cf mai re do md1 vlan 3823 br 1'
+HX3_HX4 = 'sho etherne cf mai re do md1 vlan 3834 br 1'
+
+for x in range(10, 41, 10):
+    IP = '10.1.1.' + str(x)
+    y = int(x / 10)
+    Device_type = '核心设备'
+    show_g8 = 'sho g8 erp hx b 1'
+    if x == 10:
+        show_cfm1 = HX1_HX2
+        show_cfm2 = HX1_HX3
+    elif x == 20:
+        show_cfm1 = HX1_HX2
+        show_cfm2 = HX2_HX4
+    elif x == 30:
+        show_cfm1 = HX3_HX4
+        show_cfm2 = HX1_HX3
+    else:
+        show_cfm1 = HX3_HX4
+        show_cfm2 = HX2_HX4
+    multi_test = multiprocessing.Process(target=show_cmd, args=(IP, show_g8, show_cfm1, show_cfm2, y, Device_type))
+    multi_test.start()
+    time.sleep(1)
+
+for x in range(1, 33):
+    IP = '10.1.2.' + str(x)
+    show_g8 = 'sho g8 erp jr' + str(x) + ' br 1'
+    Device_type = '接入设备'
+    if x < 17:
+        show_cfm1 = 'sho etherne cf mai re do md1 vlan 21' + '%02d' % (x) + ' b 1'
+        show_cfm2 = 'sho etherne cf mai re do md1 vlan 22' + '%02d' % (x) + ' b 1'
+    else:
+        show_cfm1 = 'sho etherne cf mai re do md1 vlan 24' + '%02d' % (x) + ' b 1'
+        show_cfm2 = 'sho etherne cf mai re do md1 vlan 23' + '%02d' % (x) + ' b 1'
+    multi_test = multiprocessing.Process(target=show_cmd, args=(IP, show_g8, show_cfm1, show_cfm2, x, Device_type))
+    multi_test.start()
+    time.sleep(1)
+
+time.sleep(1)
+
+for x in range(1, 3):
+    IP = '10.1.3.' + str(x)
+    show_g8 = 'sho g8 erp wg' + str(x) + ' br 1'
+    Device_type = '网关隔离'
+    if x == 1:
+        show_cfm1 = 'sho etherne cf mai re do md1 vlan 31' + '%02d' % (x) + ' b 1'
+        show_cfm2 = 'sho etherne cf mai re do md1 vlan 32' + '%02d' % (x) + ' b 1'
+    else:
+        show_cfm1 = 'sho etherne cf mai re do md1 vlan 34' + '%02d' % (x) + ' b 1'
+        show_cfm2 = 'sho etherne cf mai re do md1 vlan 33' + '%02d' % (x) + ' b 1'
+    multi_test = multiprocessing.Process(target=show_cmd, args=(IP, show_g8, show_cfm1, show_cfm2, x, Device_type))
+    multi_test.start()
+    time.sleep(1)

@@ -1,0 +1,386 @@
+#!/usr/bin/python
+# coding=utf-8
+from telnetlib import Telnet
+import multiprocessing
+import time
+
+##########################################################################
+#查看接入设备
+def Show_JR(ip, cmds1, cmds2, cmds3, ID, num):
+	try:
+		tn = Telnet(ip, 23)
+		time.sleep(1)
+		tn.write(b'root\n')
+		time.sleep(1)
+		tn.write(b'imish\n')
+		time.sleep(1)
+		tn.write(cmds1.encode())
+		tn.write(b'\n')
+		time.sleep(1)
+		rackreply = tn.expect([],timeout=1)[2].decode().strip()
+		words = rackreply.split()
+		if 'G8032_ST_IDLE' in words:
+			G8032 = 'G8032运行正常'
+		elif 'G8032_ST_PROTECTION' in words:
+			G8032 = 'PROTECTION'
+		elif 'G8032_ST_PENDING' in words:
+			G8032 = 'PENDING' + '\t'
+		else:
+			G8032 = 'Unknown'
+		tn.write(cmds2.encode())
+		tn.write(b'\n')
+		time.sleep(1)
+		rackreply = tn.expect([],timeout=1)[2].decode().strip()
+		words = rackreply.split()
+		def hx1_hx2_M():
+			global CFM_HX1
+			if 'Yes' in words:
+				if 'False' in words:
+					CFM_HX1 = 'XE_1/1光纤正常'
+				elif 'True' in words:
+					CFM_HX1 = 'XE_1/1光纤故障'
+				else:
+					CFM_HX1 = 'Unknown error'
+			elif 'No' in words:
+				CFM_HX1 =     'XE_1/1光纤\033[5;31;40m断开\033[0m'
+			else:
+				CFM_HX1 = 'Unknown'
+		def hx3_hx4_S():
+			global CFM_HX3
+			if 'Yes' in words:
+				if 'False' in words:
+					CFM_HX3 = 'XE_1/2光纤正常'
+				elif 'True' in words:
+					CFM_HX3 = 'XE_1/2光纤故障'
+				else:
+					CFM_HX3 = 'Unknown error'
+			elif 'No' in words:
+				CFM_HX3 = 'XE_1/2光纤\033[5;31;40m断开\033[0m'
+			else:
+				CFM_HX3 = 'Unknown'
+		if num < 17:
+			hx1_hx2_M()
+		else:
+			hx3_hx4_S()
+		tn.write(cmds3.encode())
+		tn.write(b'\n')
+		time.sleep(1)
+		rackreply = tn.expect([],timeout=1)[2].decode().strip()
+		words = rackreply.split()
+		def hx1_hx2_S():
+			global CFM_HX2
+			if 'Yes' in words:
+				if 'False' in words:
+					CFM_HX2 = 'XE_1/2光纤正常'
+				elif 'True' in words:
+					CFM_HX2 = 'XE_1/2光纤故障'
+				else:
+					CFM_HX2 = 'Unknown error'
+			elif 'No' in words:
+				CFM_HX2 = 'XE_1/2光纤\033[5;31;40m断开\033[0m'
+			else:
+				CFM_HX2 = 'Unknown'
+		def hx3_hx4_M():
+			global CFM_HX4
+			if 'Yes' in words:
+				if 'False' in words:
+					CFM_HX4 = 'XE_1/1光纤正常'
+				elif 'True' in words:
+					CFM_HX4 = 'XE_1/1光纤故障'
+				else:
+					CFM_HX4 = 'Unknown error'
+			elif 'No' in words:
+				CFM_HX4 = 'XE_1/1光纤\033[5;31;40m断开\033[0m'
+			else:
+				CFM_HX4 = 'Unknown'
+
+
+
+
+
+
+		if num < 17:
+			numplus_1 = num - 1
+			numplus_2 = num + 15
+			hx1_hx2_S()
+			result_jr = ID + G8032 + '\t' + CFM_HX1 + '\t' + CFM_HX2   
+#			return result_jr
+			print(f'{result_jr}')
+#			print(f'\033[0;37;46m{result_jr}\033[0m')
+		else:
+			numplus_3 = num - 1
+			numplus_4 = num + 15
+			hx3_hx4_M()
+			result_jr = ID + G8032 + '\t' + CFM_HX4 + '\t' + CFM_HX3
+#			return result_jr
+			print(f'{result_jr}')
+#			print(f'\033[0;37;46m{result_jr}\033[0m')
+
+		tn.write(b'exit\n')
+		tn.close()
+	except Exception as e:
+		time.sleep(5)
+		print(ID + str(e))
+############################################################################################
+#查看核心
+def Show_HX(ip, cmds1, cmds2, cmds3, cmds4, deviceName, ID):
+	try:
+		tn = Telnet(ip, 23)
+		time.sleep(1)
+		tn.write(b'root\n')
+		time.sleep(1)
+		tn.write(b'imish\n')
+		time.sleep(1)
+		tn.write(cmds1.encode())
+		tn.write(b'\n')
+		time.sleep(1)
+		rackreply = tn.expect([],timeout=1)[2].decode().strip()
+		words = rackreply.split()
+		if 'G8032_ST_IDLE' in words:
+			G8032 = 'G8032运行正常'
+		elif 'G8032_ST_PROTECTION' in words:
+			G8032 = 'PROTECTION'
+		elif 'G8032_ST_PENDING' in words:
+			G8032 = 'PENDING' + '\t'
+		else:
+			G8032 = 'Unknown'
+		tn.write(cmds2.encode())
+		tn.write(b'\n')
+		time.sleep(1)
+		rackreply = tn.expect([],timeout=1)[2].decode().strip()
+		words = rackreply.split()
+		if 'Yes' in words:
+			if 'False' in words:
+				CFM_1 = 'XE_3/1光纤正常'
+			elif 'True' in words:
+				CFM_1 = 'XE_3/1光纤故障'
+			else:
+				CFM_1 = 'Unknown error'
+		elif 'No' in words:
+			CFM_1 = 'XE_3/1光纤\033[5;31;40m断开\033[0m'
+		else:
+			CFM_1 = 'Unknown'
+
+
+
+		tn.write(cmds3.encode())
+		tn.write(b'\n')
+		time.sleep(1)
+		rackreply = tn.expect([],timeout=1)[2].decode().strip()
+		words = rackreply.split()
+		if 'Yes' in words:
+			if 'False' in words:
+				CFM_2 = 'XE_3/2光纤正常'
+			elif 'True' in words:
+				CFM_2 = 'XE_3/2光纤故障'
+			else:
+				CFM_2 = 'Unknown error'
+		elif 'No' in words:
+			CFM_2 = 'XE_3/2光纤\033[5;31;40m断开\033[0m'
+		else:
+			CFM_2 = 'Unknown'
+
+
+		tn.write(cmds4.encode())
+		tn.write(b'\n')
+		time.sleep(1)
+		rackreply = tn.expect([],timeout=1)[2].decode().strip()
+		words = rackreply.split()
+		if 'Yes' in words:
+			if 'False' in words:
+				CFM_3 = 'XE_4/1光纤正常'
+			elif 'True' in words:
+				CFM_3 = 'XE_4/1光纤故障'
+			else:
+				CFM_3 = 'Unknown error'
+		elif 'No' in words:
+			CFM_3 = 'XE_4/1光纤\033[5;31;40m断开\033[0m'
+		else:
+			CFM_3 = 'Unknown'
+		result_hx = deviceName + G8032 + '\t' + CFM_1 + '\t' + CFM_2 + '\t' + CFM_3	
+
+		print(f'\033[7;37;40m{result_hx}\033[0m') 
+
+		a = int(ID)
+		if a < 3:
+
+			numbers = list(range(1,17))
+			for num in numbers:
+				cmds5 = 'sho etherne cf mai re do md1 vlan 2' + ID + '%02d'%num + ' b 1' 
+				tn.write(cmds5.encode() + b'\n')
+		else:
+			numbers = list(range(17,33))
+			for num in numbers:
+				cmds5 = 'sho etherne cf mai re do md1 vlan 2' + ID + '%02d'%num + ' b 1' 
+				tn.write(cmds5.encode() + b'\n')
+		time.sleep(1)
+		rackreply = tn.expect([],timeout=1)[2].decode().strip()
+		words = rackreply.split()
+		ACTIVE_list = [28, 60, 92, 124, 156, 188, 220, 252, 284, 316, 348, 380, 412, 444, 476, 508]
+
+#		HX_JR_cfm_list = []
+		for l, x in enumerate(ACTIVE_list):
+			if a < 3:
+				L = l + 1
+			else:
+				L = l + 17
+			if words[x] == 'Yes':
+
+				y = x + 2
+				if words[y] == 'False':
+					cfm = deviceName + '至接入设备' + '%02d'%L + '光纤正常'
+#					HX_JR_cfm_list.append(cfm)
+				elif words[y] == 'True':
+					cfm = deviceName + '至接入设备' + '%02d'%L + '光纤异常'
+#					HX_JR_cfm_list.append(cfm)
+				else:
+					cfm = deviceName + '至接入设备' + '%02d'%L + 'unkown error'
+#					HX_JR_cfm_list.append(cfm)
+			elif words[x] == 'No':
+				cfm = deviceName + '至接入设备' + '%02d'%L + '光纤断开'
+#				HX_JR_cfm_list.append(cfm)
+			else:
+				cfm = deviceName + '至接入设备' + '%02d'%L + 'unkown error'
+#				HX_JR_cfm_list.append(cfm)		
+			print(cfm)		
+		tn.write(b'exit\n')
+		tn.close()
+#		return result_hx,HX_JR_cfm_list
+	except Exception as e:
+		time.sleep(5)
+		print(ID + str(e))
+
+
+
+if __name__ == '__main__':
+	"""
+	HX1_HX2 = 'sho etherne cf mai re do md1 vlan 3812 br 1'
+	HX1_HX3 = 'sho etherne cf mai re do md1 vlan 3813 br 1'
+	HX1_HX4 = 'sho etherne cf mai re do md1 vlan 3814 br 1'
+	HX2_HX4 = 'sho etherne cf mai re do md1 vlan 3824 br 1'
+	HX2_HX3 = 'sho etherne cf mai re do md1 vlan 3823 br 1'
+	HX3_HX4 = 'sho etherne cf mai re do md1 vlan 3834 br 1'
+
+	numbers = list(range(10,50,10))
+	for num in numbers:
+		ID = '%1d'%(num / 10)
+		ip = '10.1.1.' + str(num)
+		cmd1 = 'sho g8 erp hx b 1'
+		if num == 10:
+			cmd2 = HX1_HX2
+			cmd3 = HX1_HX3
+			cmd4 = HX1_HX4
+		elif num == 20:
+			cmd2 = HX1_HX2
+			cmd3 = HX2_HX4
+			cmd4 = HX2_HX3
+		elif num == 30:
+			cmd2 = HX1_HX3
+			cmd3 = HX3_HX4
+			cmd4 = HX2_HX3
+		elif num == 40:
+			cmd2 = HX3_HX4
+			cmd3 = HX2_HX4
+			cmd4 = HX1_HX4
+		
+		deviceName = '核心设备' + '%02d'%int(ID) + ':\t'
+		Show_HX(ip, cmd1, cmd2, cmd3, cmd4, deviceName, ID)
+
+
+
+
+
+	numbers = list(range(1,3))
+	for num in numbers:
+		ip = '10.1.2.' + str(num)
+		cmd1 = 'sho g8 erp jr' + str(num) + ' b 1'
+		if num < 17:
+			cmd2 = 'sho etherne cf mai re do md1 vlan 21' + '%02d'%num + ' b 1'
+			cmd3 = 'sho etherne cf mai re do md1 vlan 22' + '%02d'%num + ' b 1'
+		else:
+			cmd2 = 'sho etherne cf mai re do md1 vlan 23' + '%02d'%num + ' b 1'
+			cmd3 = 'sho etherne cf mai re do md1 vlan 24' + '%02d'%num + ' b 1'
+		deviceID = '接入设备' + '%02d'%num + ':\t'
+		Show_JR(ip, cmd1, cmd2 , cmd3, deviceID, num)
+	"""
+
+
+	HX1_HX2 = 'sho etherne cf mai re do md1 vlan 3812 br 1'
+	HX1_HX3 = 'sho etherne cf mai re do md1 vlan 3813 br 1'
+	HX1_HX4 = 'sho etherne cf mai re do md1 vlan 3814 br 1'
+	HX2_HX4 = 'sho etherne cf mai re do md1 vlan 3824 br 1'
+	HX2_HX3 = 'sho etherne cf mai re do md1 vlan 3823 br 1'
+	HX3_HX4 = 'sho etherne cf mai re do md1 vlan 3834 br 1'
+	numbers = list(range(10,50,10))
+
+	for num in numbers:
+		ID = '%1d'%(num / 10)
+		ip = '10.1.1.' + str(num)
+		cmd1 = 'sho g8 erp hx b 1'
+		if num == 10:
+			cmd2 = HX1_HX2
+			cmd3 = HX1_HX3
+			cmd4 = HX1_HX4
+		elif num == 20:
+			cmd2 = HX1_HX2
+			cmd3 = HX2_HX4
+			cmd4 = HX2_HX3
+		elif num == 30:
+			cmd2 = HX1_HX3
+			cmd3 = HX3_HX4
+			cmd4 = HX2_HX3
+		elif num == 40:
+			cmd2 = HX3_HX4
+			cmd3 = HX2_HX4
+			cmd4 = HX1_HX4
+
+		deviceName = '核心设备' + '%02d'%int(ID) + ':\t'
+		multi_test = multiprocessing.Process(target=Show_HX, args=(ip, cmd1, cmd2, cmd3, cmd4, deviceName, ID))
+		R = multi_test.start()
+		time.sleep(3)
+
+
+
+	time.sleep(3)
+
+
+
+
+	numbers = list(range(1,33))
+	for num in numbers:
+		ip = '10.1.2.' + str(num)
+		cmd1 = 'sho g8 erp jr' + str(num) + ' b 1'
+		if num < 17:
+			cmd2 = 'sho etherne cf mai re do md1 vlan 21' + '%02d'%num + ' b 1'
+			cmd3 = 'sho etherne cf mai re do md1 vlan 22' + '%02d'%num + ' b 1'
+		else:
+			cmd2 = 'sho etherne cf mai re do md1 vlan 23' + '%02d'%num + ' b 1'
+			cmd3 = 'sho etherne cf mai re do md1 vlan 24' + '%02d'%num + ' b 1'
+		deviceID = '接入设备' + '%02d'%num + ':\t'
+		multi_test = multiprocessing.Process(target=Show_JR, args=(ip, cmd1, cmd2, cmd3, deviceID, num))
+		multi_test.start()
+		time.sleep(1)
+
+
+
+
+
+
+	numbers = list(range(1,3))
+	for num in numbers:
+		ip = '10.1.3.' + str(num)
+		cmd1 = 'sho g8 erp wg' + str(num) + ' b 1'
+		if num < 2:
+			cmd2 = 'sho etherne cf mai re do md1 vlan 31' + '%02d'%num + ' b 1'
+			cmd3 = 'sho etherne cf mai re do md1 vlan 32' + '%02d'%num + ' b 1'
+			GLnum = 1
+		else:
+			cmd2 = 'sho etherne cf mai re do md1 vlan 33' + '%02d'%num + ' b 1'
+			cmd3 = 'sho etherne cf mai re do md1 vlan 34' + '%02d'%num + ' b 1'
+			GLnum = 34
+		deviceID = '隔离设备' + '%02d'%num + ':\t'
+		multi_test = multiprocessing.Process(target=Show_JR, args=(ip, cmd1, cmd2, cmd3, deviceID, GLnum))
+		multi_test.start()
+		time.sleep(1)
+
+

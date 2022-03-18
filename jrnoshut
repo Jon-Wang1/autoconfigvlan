@@ -1,0 +1,130 @@
+#!/usr/bin/python3
+# -*- coding=utf-8 -*-
+from telnetlib import Telnet
+import sys
+import re
+import time
+import os
+def shutdown_p(DeviceID_PortID):
+	try:
+		DeviceID_and_portID = re.match('(\d{1,2})-(\d{1,2})',DeviceID_PortID).groups()
+		ID = DeviceID_and_portID[0]
+		iface_id = DeviceID_and_portID[1]
+		ip = '10.1.2.' + ID
+		show_run_iface = 'sh ru int ge_1/' + str(iface_id)
+		show_if_status = 'sh ip int ge_1/' + str(iface_id)	 +' br'
+		iface = 'inter ge_1/' + str(iface_id)
+		action = 'no shutdown'
+		tn = Telnet(ip, 23)
+		time.sleep(1)
+		tn.write(b'root\n')
+#		time.sleep(1)
+		tn.write(b'imish\n')
+#		time.sleep(1)
+		tn.write(b'en\n')
+#		time.sleep(1)		
+		tn.write(show_run_iface.encode())
+		tn.write(b'\n')
+#		time.sleep(1)
+		tn.write(show_if_status.encode())
+		tn.write(b'\n')
+#		time.sleep(1)
+		rackreply = tn.expect([],timeout=1)[2].decode().strip()
+		rackreply_run = re.match('[\S\s]*(![\s|\S]*!)',rackreply).groups()
+		if re.match('[\S\s]*administratively',rackreply):
+			rackreply_if_status_before = '接口配置前的状态：''admin down'
+		elif re.match('[\S\s]*up\s+up',rackreply):
+			rackreply_if_status_before = '接口配置前的状态：''link  up'
+		elif re.match('[\S\s]*up\s+down',rackreply):
+			rackreply_if_status_before = '接口配置前的状态：''link  down'
+		elif re.match('[\S\s]*down\s+down',rackreply):
+			rackreply_if_status_before = '接口配置前的状态：''BPDU  down'
+		print(rackreply_run[0])
+		print(rackreply_if_status_before)
+		tn.write(b'conf t\n')
+#		time.sleep(1)
+		tn.write(iface.encode())
+		tn.write(b'\n')
+#		time.sleep(1)
+		tn.write(action.encode())
+		tn.write(b'\n')
+		result_action = '已将接口配置为  ：no shutdown'
+		print(result_action)
+		print('请稍等，正在等待接口状态稳定。')
+		time.sleep(1)
+		tn.write(b'end\n')
+		time.sleep(1)
+		tn.write(show_if_status.encode())
+		tn.write(b'\n')	
+		rackreply = tn.expect([],timeout=1)[2].decode().strip()
+
+		if re.match('[\S\s]*administratively',rackreply):
+			rackreply_if_status = '接口配置后的状态：''admin down'
+		elif re.match('[\S\s]*up\s+up',rackreply):
+			rackreply_if_status = '接口配置后的状态：''link  up'
+		elif re.match('[\S\s]*up\s+down',rackreply):
+			rackreply_if_status = '接口配置后的状态：''link  down'
+		elif re.match('[\S\s]*down\s+down',rackreply):
+			rackreply_if_status = '接口配置后的状态：''BPDU  down'
+
+		time.sleep(4)
+		os.system('clear')
+		print('请稍等，正在等待接口状态稳定。')
+		time.sleep(1)
+		os.system('clear')
+		print('请稍等，正在等待接口状态稳定。')
+		time.sleep(3)
+		os.system('clear')
+		print('请稍等，正在等待接口状态稳定。')
+		os.system('clear')
+		print('请稍等，正在等待接口状态稳定。')
+		os.system('clear')
+		print('请稍等，正在等待接口状态稳定。')
+		os.system('clear')
+		print('请稍等，正在等待接口状态稳定。')
+		os.system('clear')
+		print('请稍等，正在等待接口状态稳定。')
+		os.system('clear')
+		print('请稍等，正在等待接口状态稳定。')
+		os.system('clear')
+		print('请稍等，正在等待接口状态稳定。')
+		os.system('clear')
+		print('请稍等，正在等待接口状态稳定。')
+		os.system('clear')
+		print('请稍等，正在等待接口状态稳定。')
+		os.system('clear')
+		print('请稍等，正在等待接口状态稳定。')
+		os.system('clear')
+		print('请稍等，正在等待接口状态稳定。')
+
+		tn.write(show_if_status.encode())
+		tn.write(b'\n')	
+		rackreply = tn.expect([],timeout=1)[2].decode().strip()
+
+		if re.match('[\S\s]*administratively',rackreply):
+			rackreply_if_status = '接口配置后的状态：''admin down'
+		elif re.match('[\S\s]*up\s+up',rackreply):
+			rackreply_if_status = '接口配置后的状态：''link  up'
+		elif re.match('[\S\s]*up\s+down',rackreply):
+			rackreply_if_status = '接口配置后的状态：''link  down'
+		elif re.match('[\S\s]*down\s+down',rackreply):
+			rackreply_if_status = '接口配置后的状态：''BPDU  down'
+		print(rackreply_run[0])
+		print(rackreply_if_status_before)
+		print(result_action)
+		print(rackreply_if_status)
+#		time.sleep(1)
+		tn.write(b'wr\n')
+		time.sleep(1)
+		rackreply = tn.expect([],timeout=1)[2].decode().strip()
+		if 'OK' in rackreply:
+			print('配置保存成功')
+		tn.write(b'exit\n')
+		tn.close()		
+	except Exception as e:
+		time.sleep(5)
+		print(ID + str(e))
+
+
+#shutdown_p('10.1.2.31','sho run inter ge_1/1','sho ip inter ge_1/1 br','inter ge_1/1','no shutdown')
+shutdown_p(sys.argv[1])

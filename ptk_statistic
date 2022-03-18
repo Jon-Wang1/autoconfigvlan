@@ -1,0 +1,141 @@
+#!/usr/bin/python3.7
+# coding=utf-8
+from telnetlib import Telnet
+import multiprocessing
+import time
+import re
+
+##########################################################################
+
+
+def Show_jr_iface(ip, ID):
+	try:
+		tn = Telnet(ip, 23)
+		time.sleep(1)
+		tn.write(b'root\n')
+		time.sleep(1)
+		tn.write(b'imish\n')
+		time.sleep(1)
+		tn.write(b'show inter | in input \n')
+#		time.sleep(1)
+		tn.write(b'    ')
+		time.sleep(1)
+
+		rackreply = tn.expect([],timeout=1)[2].decode().strip()
+
+		words = re.findall('\s+input\s+packets\s+(\d+),',rackreply)
+		words_ge = words[1:49]
+
+		words_int = []
+		for x in words_ge:
+			words_int.append(int(x))
+		words_raw = words_int.copy()
+		words_int.sort()
+		max_count = words_int[-1]
+		
+		iface = '收包数量最大的是接口' + '%02d'%((words_raw.index(max_count) + 1),)
+
+		print('JR' + '%02d'%(ID,) + '%-15s'%(iface,) + ': ' + '%12d'%max_count)
+		tn.write(b'exit\n')
+		tn.close()
+	except Exception as e:
+		time.sleep(5)
+		print(ID + str(e))
+
+
+
+
+def Show_hx_iface(ip, ID):
+	try:
+		tn = Telnet(ip, 23)
+		time.sleep(1)
+		tn.write(b'root\n')
+		time.sleep(1)
+		tn.write(b'imish\n')
+		time.sleep(1)
+		tn.write(b'show inter | in input \n')
+		time.sleep(2)
+		tn.write(b'          ')
+		time.sleep(1)
+
+		rackreply = tn.expect([],timeout=1)[2].decode().strip()
+
+		words = re.findall('\s+input\s+packets\s+(\d+),',rackreply)
+		words_ge = words[7:15] + words[26:34] #+ words[45]
+
+		words_int = []
+		for x in words_ge:
+			words_int.append(int(x))
+		words_raw = words_int.copy()
+		words_int.sort()
+		max_count = words_int[-1]
+		
+		iface = '收包数量最大的是接口' + '%02d'%((words_raw.index(max_count) + 1),)
+
+		print('HX' + '%02d'%(ID,) + '%-15s'%(iface,) + ': ' + '%12d'%max_count)
+		tn.write(b'exit\n')
+		tn.close()
+	except Exception as e:
+		time.sleep(5)
+		print(ID + str(e))
+
+
+def Show_wg_iface(ip, ID):
+	try:
+		tn = Telnet(ip, 23)
+		time.sleep(1)
+		tn.write(b'root\n')
+		time.sleep(1)
+		tn.write(b'imish\n')
+		time.sleep(1)
+		tn.write(b'show inter | in input \n')
+#		time.sleep(1)
+		tn.write(b'    ')
+		time.sleep(1)
+
+		rackreply = tn.expect([],timeout=1)[2].decode().strip()
+
+		words = re.findall('\s+input\s+packets\s+(\d+),',rackreply)
+		words_ge = words[1:25]
+
+		words_int = []
+		for x in words_ge:
+			words_int.append(int(x))
+		words_raw = words_int.copy()
+		words_int.sort()
+		max_count = words_int[-1]
+		
+		iface = '收包数量最大的是接口' + '%02d'%((words_raw.index(max_count) + 1),)
+
+		print('WG' + '%02d'%(ID,) + '%-15s'%(iface,) + ': ' + '%12d'%max_count)
+		tn.write(b'exit\n')
+		tn.close()
+	except Exception as e:
+		time.sleep(5)
+		print(ID + str(e))
+
+
+for x in range(10,41,10):
+	ip = '10.1.1.' + str(x)
+	ID = x/10
+	multi_test = multiprocessing.Process(target=Show_hx_iface, args=(ip, ID))
+	multi_test.start()
+	time.sleep(1)
+time.sleep(1)
+
+
+for x in range(1,33):
+	ip = '10.1.2.' + str(x)
+	ID = x
+	multi_test = multiprocessing.Process(target=Show_jr_iface, args=(ip, ID))
+	multi_test.start()
+	time.sleep(1)
+
+
+for x in range(1,3):
+	ip = '10.1.3.' + str(x)
+	ID = x
+	multi_test = multiprocessing.Process(target=Show_wg_iface, args=(ip, ID))
+	multi_test.start()
+	time.sleep(1)
+
