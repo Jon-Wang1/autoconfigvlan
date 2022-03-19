@@ -49,8 +49,8 @@ if __name__ == '__main__':
     # print(raw_result)
     pprint.pprint(raw_result)
     #
-    # config_commands = ['router bgp 123',
-    #                    'bgp router-id 123.1.1.123',
-    #                    'network 1.1.1.1 mask 255.255.255.255']
-    #
-    # print(netmiko_config_cred('66.0.19.92', 'admin', 'Cisc0123', config_commands, verbose=True))
+    config_commands = ['router bgp 123',
+                       'bgp router-id 123.1.1.123',
+                       'network 1.1.1.1 mask 255.255.255.255']
+
+    print(netmiko_config_cred('66.0.19.121', 'admin', 'Cisc0123', config_commands, verbose=True))
